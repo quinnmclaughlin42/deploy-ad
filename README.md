@@ -32,33 +32,33 @@ This walkthrough showcases the deployment and configuration of Active Directory 
 <h2>Deployment and Configuration Steps</h2>
 
 <p>
-<img src="https://github.com/user-attachments/assets/ada57f78-8d6e-4513-a2a5-d2a63ce5f4c3" height="80%" width="80%" alt="Disk Sanitization Steps"/>
+<img src="https://github.com/user-attachments/assets/7d1e70f6-7b8b-46c1-a75d-0d55fd89c9e5" height="80%" width="80%" alt="Disk Sanitization Steps"/>
 </p>
 <p>
-To begin, we log into Microsoft Azure and create a new Resource Group to house everything we’ll build. Once this is created, we’ll create a Virtual Network server for our consequent Virtual Machines to run within. In this scenario, I decided to have the region of our Virtual Network set to ‘East US 2’, and as the VMs are built, they will also be put into the same region. Once the Virtual Network deploys we can build both of our Virtual Machines, with the key difference between them being the operating system we choose for each. One will be launched with Windows Datacenter (DC-1), and the other will run Windows 10 (Client-1). Before subsequent deployment, we also make sure each VM is set to the Virtual Network we created previously, which can be found within the Networking tab. After this, both VMs can be deployed.
-</p>
-<br />
-
-<p>
-<img src="https://github.com/user-attachments/assets/b0310fbc-c163-4345-8f66-32aa4c998156" height="80%" width="80%" alt="Disk Sanitization Steps"/>
-</p>
-<p>
-After successful deployment of the Datacenter VM (we don’t have to wait for both to deploy for this step), we navigate to its ‘Networking’ tab within Azure. Here we can click on ‘Network Settings’ in the dropdown menu which allows us to see DC-1’s Virtual NIC. Clicking on this will bring us to a window where we can set the VM’s Private IP Address settings to static, which is necessary for utilizing it as a Domain Controller. In this case, the Private IP Address was locked to ‘10.0.0.4’. We can then go into the VM’s ‘Overview’ tab to copy the Public IP Address and Remote Desktop into the VM, using the credentials we chose while deploying the VM to log in. Once logged in, we’ll open Windows Firewall (wf.msc) and disable it within the Domain, Private, and Public Profile tabs.
+We begin by logging into DC-1 (all materials used were built in a prior project), and open the Server Manager. Within the Dashboard we click on ‘Add roles and features’ which will allow us to install Active Directory on the VM. Within the installation wizard and in the ‘Server Roles’ tab, we choose ‘Active Directory Domain Services’ and add the features. We then proceed to finish the installation. Once this is complete, an alert shows up inside the Server Manager Dashboard, allowing us to ‘Promote this server to a domain controller’, which we click. This opens another installation wizard where we choose ‘Add a new forest’ within the Deployment Configuration. This also lets us add our root domain name, which in this case is ‘mydomain.com’. Proceeding will let us create a Directory Services Restore Mode password, and in this case we choose ‘Password1’. After this, we continue through the rest of the installation and let the VM restart as needed.
 </p>
 <br />
 
 <p>
-<img src="https://github.com/user-attachments/assets/57b29aa8-142d-447c-a2e0-a17593638460" height="80%" width="80%" alt="Disk Sanitization Steps"/>
+<img src="https://github.com/user-attachments/assets/ca9bf180-630e-4eef-b007-36f1faeeefd7" height="80%" width="80%" alt="Disk Sanitization Steps"/>
 </p>
 <p>
-Next, we navigate back into Azure and follow the same steps as we did earlier to access our ‘Client’ VM’s Virtual NIC. Once inside, we’ll click ‘DNS Servers’ from the ‘Settings’ drop-down tab, and change the DNS Server to ‘Custom’. This will allow us to input our Domain Controller’s Private IP Address (why it was necessary to make the IP Address static). This lets our VMs communicate with each other, with the Client VM using the DC VM as its DNS Server from now on. After saving, we also choose to restart the Client VM to ensure the changes update. We then copy the Client VM’s Public IP Address, and Remote Desktop in, just as we did with the Domain Controller VM. 
+Once the VM has restarted, we Remote Desktop back in, but this time providing domain context before our username. In this instance, our username is now ‘mydomain.com\labuser42’ with the same password as before. Attempting to log in without proper domain context would result in a failure to log in since we can no longer log into this VM as a local user, only a domain user. Once we’ve logged back in, we can now open the application ‘Active Directory Users and Computers’ through the Start Menu. Inside this application we can right click on the domain tab, and create a ‘New’ ‘Organizational Unit’. We create two of these for now, one titled “_EMPLOYEES” and the other titled “_ADMINS”. Within ‘_ADMINS’ we again right click, and choose to create a new user. In this case I chose my own name as the admin account, with the username of ‘quinn_mcl’ and a random never expiring password (not recommended, but for the purpose of the lab it helps). After creating the user we enter its ‘Properties’ and open the ‘Member Of’ tab. Here we add this fresh user to ‘Domain Admins’ and apply changes, allowing this account to have full administrative functionality. We then sign out of the Domain Controller with the ‘labuser42’ account and sign back in with our fresh admin account, remembering to add context before our username as we log in.
 </p>
 <br />
 
 <p>
-<img src="https://github.com/user-attachments/assets/140f8c67-2834-42df-b674-05f23c507f80" height="80%" width="80%" alt="Disk Sanitization Steps"/>
+<img src="https://github.com/user-attachments/assets/fcc5bc71-4520-43e5-95e7-3783df7b90d4" height="80%" width="80%" alt="Disk Sanitization Steps"/>
 </p>
 <p>
-Lastly, to showcase the connection of the two VMs, we open Windows Powershell within the Client VM. Typing ‘ping’ alongside the DC’s Private IP Address (10.0.0.4) will show us that the VMs are able to send and receive data from one another. To dig a bit deeper, we’ll also type ‘ipconfig /all’, which upon scrolling down will show the DC’s Private IP Address listed as ‘DNS Servers’, showing us the infrastructure is now in place to deploy Active Directory (showcased in a separate project).
+Next, we open the Client VM and enter the System Settings from the Start Menu. In this instance, we’re still logged in to the Client as our initial local user. Within the settings we click ‘Rename this PC (advanced)’ which opens a window allowing us to change the VM’s domain. Clicking this lets us choose ‘Domain’ under ‘Member OF’ and input our domain name, which in this case is ‘mydomain.com’. Since we are still logged in as a random user currently, making these changes causes a security pop-up window, where we enter the credentials of our newly created admin account, along with the domain context in the username. This finalizes the changes and asks for the Client VM to restart, which we allow. 
+</p>
+<br />
+
+<p>
+<img src="https://github.com/user-attachments/assets/88cc0277-750d-4c49-8ea5-42308dd7eb94" height="80%" width="80%" alt="Disk Sanitization Steps"/>
+</p>
+<p>
+Lastly, we go back to the Domain Controller VM and reopen Active Directory Users and Computers. Within the domain dropdown we can open the ‘Computers’ folder, and within we see our recently added ‘Client-1’. For the sake of organization, we create one final organizational unit titled “_CLIENTS” and drag the Client-1 computer into it. Now that our domain is officially running we can experiment with its use cases (showcased in the subsequent project).
 </p>
 <br />
